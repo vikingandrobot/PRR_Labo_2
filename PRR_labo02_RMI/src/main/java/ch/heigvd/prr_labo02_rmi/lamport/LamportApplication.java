@@ -17,10 +17,10 @@ public class LamportApplication {
    public static void main(String[] args) {
       
       try {
-         System.out.println("Starting the server...");
-         Lamport server = (Lamport)UnicastRemoteObject.exportObject(new LamportImpl(), 0);
-         LocateRegistry.getRegistry().bind("lamport-" + 0, server);
-         System.out.println("Server ready...");
+         System.out.println("Starting the Lamport application...");
+         Lamport lamport = (Lamport)UnicastRemoteObject.exportObject(new LamportImpl(), 0);
+         LocateRegistry.getRegistry().bind("lamport-" + 0, lamport);
+         System.out.println("Lamport application ready...");
       } catch (RemoteException ex) {
          Logger.getLogger(LamportApplication.class.getName()).log(Level.SEVERE, null, ex);
       } catch (AlreadyBoundException ex) {
