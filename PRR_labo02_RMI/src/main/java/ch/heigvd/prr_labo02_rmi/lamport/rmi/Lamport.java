@@ -8,10 +8,26 @@ import java.rmi.RemoteException;
  *
  */
 public interface Lamport extends Remote {
+   
    /**
     * Send a lamport message
     * @param message the message to send
     * @throws RemoteException 
     */
    public void send(LamportMessage message) throws RemoteException;
+   
+   /**
+    * Get the value of the shared variable
+    * @return the value 
+    * @throws RemoteException 
+    */
+   public int getSharedValue() throws RemoteException;
+   
+   /**
+    * Set the value of the shared variable. The application needs to enter in critical section
+    * and then notifies all the other Lamport applications of the change
+    * @param sharedValue
+    * @throws RemoteException 
+    */
+   public void setSharedValue(int sharedValue) throws RemoteException;
 }

@@ -8,19 +8,23 @@ import java.rmi.RemoteException;
  */
 public class LamportImpl implements Lamport {
    
-   private int value;
+   // The shared value
+   private int sharedValue;
 
    @Override
    public void send(LamportMessage message) throws RemoteException {
-      value = message.getSharedValue();
-      System.out.println("Value is : " + value);
+      // TODO manage the LamportMessage and the Lamport algorithm
    }
 
-   public int getValue() {
-      return value;
+   @Override
+   public int getSharedValue() throws RemoteException {
+      return sharedValue;
    }
 
-   public void setValue(int value) {
-      this.value = value;
+   @Override
+   public void setSharedValue(int sharedValue) throws RemoteException {
+      
+      // TODO implement the Lamport algorithm to notify the other Lamport applications
+      this.sharedValue = sharedValue;
    }
 }

@@ -19,7 +19,7 @@ public class LamportApplication {
       try {
          System.out.println("Starting the server...");
          Lamport server = (Lamport)UnicastRemoteObject.exportObject(new LamportImpl(), 0);
-         LocateRegistry.getRegistry().bind("server", server);
+         LocateRegistry.getRegistry().bind("lamport-" + 0, server);
          System.out.println("Server ready...");
       } catch (RemoteException ex) {
          Logger.getLogger(LamportApplication.class.getName()).log(Level.SEVERE, null, ex);
