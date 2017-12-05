@@ -12,9 +12,11 @@ public interface Lamport extends Remote {
    /**
     * Send a lamport message
     * @param message the message to send
+    * @return a RECEIPT message if the message was a REQUEST, null if it was a 
+    * RELEASE
     * @throws RemoteException 
     */
-   public void send(LamportMessage message) throws RemoteException;
+   public LamportMessage send(LamportMessage message) throws RemoteException;
    
    /**
     * Get the value of the shared variable
