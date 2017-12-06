@@ -46,16 +46,27 @@ public class LamportImpl implements Lamport {
       lamportApplications[id] = this;
 
       lamportMessages = new LamportMessage[numberOfApplications];
+      
+      for (int i = 0; i < lamportMessages.length; ++i) {
+         lamportMessages[i] = new LamportMessage(
+                 LamportMessage.Type.RELEASE, 
+                 0, 
+                 this.id, 
+                 sharedValue
+         );
+      }
    }
 
    @Override
-   public LamportMessage send(LamportMessage message) throws RemoteException {
+   public LamportMessage receive(LamportMessage message) throws RemoteException {
+      System.out.println("Start send");
+      // Update our clock
+      clock.update(message.getTimeStamp());
+      
       // Store the message (Which is either a RELEASE or a REQUEST)
       synchronized(this) {
          lamportMessages[message.getSender()] = message;
       }
-      // Update our clock
-      clock.update(message.getTimeStamp());
       
       LamportMessage response = null;
 
@@ -70,48 +81,48 @@ public class LamportImpl implements Lamport {
          );
       } else if (message.getType() == LamportMessage.Type.RELEASE) {
          // Update the shared value
-         synchronized(this) {
-            sharedValue = message.getSharedValue();
-         }
+         setSharedValue(message.getSharedValue());
       }
 
       // If we are waiting for a critical section and have permission
       LamportMessage myLastMessage;
       synchronized(this) {
          myLastMessage = lamportMessages[this.id];
-      }
-      if (myLastMessage != null
-              && myLastMessage.getType() == LamportMessage.Type.REQUEST
-              && criticalSectionPermission()) {
-         synchronized(this) {
+      //}
+         if (myLastMessage.getType() == LamportMessage.Type.REQUEST
+                 && criticalSectionPermission()) {
             this.notify();
          }
       }
-      
+      System.out.println("End send");
       return response;
    }
    
    @Override
    public void lock() throws RemoteException{
+      System.out.println("Start lock");
       // Request the critical section
       requestCriticalSection();
 
       // If we don't have the permission, we wait
-      if (!criticalSectionPermission()) {
-         try {
-            synchronized(this) {
-               this.wait();
+      synchronized(this) {
+         if (!criticalSectionPermission()) {
+            try {
+                  this.wait();
+            } catch (InterruptedException ex) {
+               Logger.getLogger(LamportImpl.class.getName()).log(Level.SEVERE, null, ex);
             }
-         } catch (InterruptedException ex) {
-            Logger.getLogger(LamportImpl.class.getName()).log(Level.SEVERE, null, ex);
          }
       }
+      System.out.println("End lock");
    }
 
    @Override
    public void unlock() throws RemoteException {
+      System.out.println("Start unlock");
       // Release the critical section and notify the other applications of the change
-      releaseCriticalSection();   
+      releaseCriticalSection();  
+      System.out.println("End unlock");
    }
 
    @Override
@@ -134,6 +145,7 @@ public class LamportImpl implements Lamport {
     * @throws RemoteException
     */
    private void requestCriticalSection() throws RemoteException {
+      System.out.println("Start request");
       // Tick the clock
       clock.tick();
 
@@ -141,9 +153,14 @@ public class LamportImpl implements Lamport {
       LamportMessage request = new LamportMessage(
               LamportMessage.Type.REQUEST,
               clock.getTime(),
-              id,
+              this.id,
               sharedValue
       );
+
+      // Store the request
+      synchronized(this) {
+         lamportMessages[id] = request;
+      }
 
       // Send the request to all the other Lamport applications
       for (int i = 0; i < lamportApplications.length; ++i) {
@@ -159,26 +176,21 @@ public class LamportImpl implements Lamport {
             }
 
             // Send the request and receive the receipt
-            LamportMessage receipt = lamportApplications[i].send(request);
+            LamportMessage receipt = lamportApplications[i].receive(request);
 
             // Update our logical clock
             clock.update(receipt.getTimeStamp());
 
             // Store the receipt
             synchronized(this) {
-               if (lamportMessages[i] == null
-                       || lamportMessages[i].getType() != LamportMessage.Type.REQUEST) {
+               if (lamportMessages[i].getType() != LamportMessage.Type.REQUEST) {
                   lamportMessages[i] = receipt;
                }
             }
 
          }
       }
-
-      // Store the request
-      synchronized(this) {
-         lamportMessages[id] = request;
-      }
+      System.out.println("End request");
    }
 
    /**
@@ -188,23 +200,26 @@ public class LamportImpl implements Lamport {
     * @throws RemoteException
     */
    public void releaseCriticalSection() throws RemoteException {
+      System.out.println("Start release");
       // Create the message to send
       LamportMessage release = new LamportMessage(
               LamportMessage.Type.RELEASE,
               clock.getTime(),
               id,
-              sharedValue
+              getSharedValue()
       );
+      
+      synchronized(this) {
+         lamportMessages[this.id] = release;
+      }
 
       // Send the RELEASE to every other application
       for (int i = 0; i < lamportApplications.length; ++i) {
          if (i != this.id) {
-            lamportApplications[i].send(release);
+            lamportApplications[i].receive(release);
          }
       }
-      synchronized(this) {
-         lamportMessages[this.id] = release;
-      }
+      System.out.println("End release");
    }
 
    /**
@@ -215,7 +230,8 @@ public class LamportImpl implements Lamport {
     * @return true if the current Lamport application last time stamp is older
     * than all the other time stamps.
     */
-   private synchronized boolean criticalSectionPermission() {
+   private boolean criticalSectionPermission() {
+      System.out.println("Start permission");
       boolean permission = true;
       long myLastTimeStamp = lamportMessages[this.id].getTimeStamp();
 
@@ -230,13 +246,10 @@ public class LamportImpl implements Lamport {
             permission = permission && ((myLastTimeStamp < otherTimeStamp)
                     || (myLastTimeStamp == otherTimeStamp && this.id < i));
 
-            // If the permission is already declined, we can stop
-            if (permission == false) {
-               break;
-            }
          }
       }
-
+      
+      System.out.println("End permission");
       // Return the resulting permission
       return permission;
    }

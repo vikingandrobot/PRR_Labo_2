@@ -58,11 +58,6 @@ public class UserApplication {
                   int newValue = in.nextInt();
                   lamport.lock();
                   int value = lamport.getSharedValue();
-                  try {
-                     Thread.sleep(60000);
-                  } catch (InterruptedException ex) {
-                     Logger.getLogger(UserApplication.class.getName()).log(Level.SEVERE, null, ex);
-                  }
                   System.out.println("The value before is : " + value);
                   System.out.println("Setting the new value...");
                   lamport.setSharedValue(newValue);
@@ -87,7 +82,6 @@ public class UserApplication {
                   for (int i = 0; i < numberOfTests; ++i) {
                      lamport.lock();
                      lamport.setSharedValue(lamport.getSharedValue() + 1);
-                     System.out.println(lamport.getSharedValue());
                      lamport.unlock();
                   }
                   

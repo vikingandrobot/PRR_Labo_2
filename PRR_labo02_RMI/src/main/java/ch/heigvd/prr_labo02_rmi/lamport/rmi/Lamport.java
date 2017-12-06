@@ -16,7 +16,7 @@ public interface Lamport extends Remote {
     * RELEASE
     * @throws RemoteException 
     */
-   public LamportMessage send(LamportMessage message) throws RemoteException;
+   public LamportMessage receive(LamportMessage message) throws RemoteException;
    
    /**
     * Lock the critical section. Stops the thread until the critical section

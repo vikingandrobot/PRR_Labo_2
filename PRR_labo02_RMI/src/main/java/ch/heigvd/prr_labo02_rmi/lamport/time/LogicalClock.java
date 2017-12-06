@@ -8,6 +8,7 @@ package ch.heigvd.prr_labo02_rmi.lamport.time;
  * The clock starts at 0
  */
 public class LogicalClock {
+   
    private long time;
    
    /**
@@ -39,7 +40,6 @@ public class LogicalClock {
     * @param otherTime the time of another logical clock
     */
    public synchronized void update(long otherTime) {
-      time = Math.max(time, otherTime);
-      ++time;
+      time = Math.max(time, otherTime) + 1;
    }
 }
