@@ -56,11 +56,18 @@ public class UserApplication {
                try {
                   System.out.println("Please enter the new value: ");
                   int newValue = in.nextInt();
+                  lamport.lock();
                   int value = lamport.getSharedValue();
+                  try {
+                     Thread.sleep(60000);
+                  } catch (InterruptedException ex) {
+                     Logger.getLogger(UserApplication.class.getName()).log(Level.SEVERE, null, ex);
+                  }
                   System.out.println("The value before is : " + value);
                   System.out.println("Setting the new value...");
                   lamport.setSharedValue(newValue);
                   value = lamport.getSharedValue();
+                  lamport.unlock();
                   System.out.println("The new value is : " + value);
                   in.nextLine();
                   
@@ -71,6 +78,31 @@ public class UserApplication {
                   Logger.getLogger(UserApplication.class.getName()).log(Level.SEVERE, null, ex);
                }
                // Set the value
+               break;
+            
+            case "test":
+               try {
+                  System.out.println("Please enter the number of tests: ");
+                  int numberOfTests = in.nextInt();
+                  for (int i = 0; i < numberOfTests; ++i) {
+                     lamport.lock();
+                     lamport.setSharedValue(lamport.getSharedValue() + 1);
+                     System.out.println(lamport.getSharedValue());
+                     lamport.unlock();
+                  }
+                  
+                  System.out.println("Tests finished...");
+                  lamport.lock();
+                  System.out.println("The resulting value is: " 
+                          + lamport.getSharedValue());
+                  lamport.unlock();
+                  in.nextLine();
+               } catch (InputMismatchException ex) {
+                  System.out.println("Please enter an integer value.");
+               } catch (RemoteException ex) {
+                  System.out.println("An error occurred...");
+                  Logger.getLogger(UserApplication.class.getName()).log(Level.SEVERE, null, ex);
+               }
                break;
 
             case "quit":
@@ -90,7 +122,10 @@ public class UserApplication {
       System.out.println("====================================");
       System.out.println("Commands");
       System.out.println("'get' :   Get the value of the shared variable.");
-      System.out.println("'set' :   Set the value of the shared variable. You will be asked to enter the new desired value.");
+      System.out.println("'set' :   Set the value of the shared variable. You "
+              + "will be asked to enter the new desired value.");
+      System.out.println("'test' :  Start a test program. You will be asked the "
+              + "number of incrementations to do.");
       System.out.println("'quit' :  Quit the application.");
       System.out.println("====================================");
    }

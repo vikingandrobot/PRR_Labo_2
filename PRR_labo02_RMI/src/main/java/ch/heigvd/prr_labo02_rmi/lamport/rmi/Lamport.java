@@ -19,6 +19,20 @@ public interface Lamport extends Remote {
    public LamportMessage send(LamportMessage message) throws RemoteException;
    
    /**
+    * Lock the critical section. Stops the thread until the critical section
+    * has been obtained.
+    * @throws java.rmi.RemoteException
+    */
+   public void lock() throws RemoteException;
+   
+   /**
+    * Unlock the critical section. Sends a message to all other Lamport 
+    * applications to notify them from the release of the critical section.
+    * @throws java.rmi.RemoteException
+    */
+   public void unlock() throws RemoteException;
+   
+   /**
     * Get the value of the shared variable
     * @return the value 
     * @throws RemoteException 
