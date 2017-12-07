@@ -1,3 +1,9 @@
+/**
+ * File: LamportImpl.java
+ * Authors: Sathiya Kirushnapillai & Mathieu Monteverde
+ * Date: 07.12.2017
+ */
+
 package ch.heigvd.prr_labo02_rmi.lamport.rmi;
 
 import ch.heigvd.prr_labo02_rmi.lamport.message.LamportMessage;
@@ -9,7 +15,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
+ * The LamportImpl is the implementation of the Lamport remote object. Its 
+ * purpose is to store the shared integer value, and use the Lamport algorithm
+ * to manage the critical section and to share the value across the different 
+ * Lamport applications. 
+ * 
+ * Please refer to the Lamport interface definition for information
+ * regarding overriden methods.
  */
 public class LamportImpl implements Lamport {
 
@@ -37,16 +49,20 @@ public class LamportImpl implements Lamport {
     * @param id the id of this specific Lamport application
     */
    public LamportImpl(String rmiAddress, int numberOfApplications, int id) {
+      // Save the RMI registry address and our application id
       this.rmiAddress = rmiAddress;
       this.id = id;
-
+      
+      // Create a clock
       clock = new LogicalClock();
-
+      
+      // Create the array of RMI distant Lamport objects
       lamportApplications = new Lamport[numberOfApplications];
-      lamportApplications[id] = this;
-
+      
+      // Create the array of received  messages
       lamportMessages = new LamportMessage[numberOfApplications];
       
+      // Initialize the array to an array of RELEASE messages
       for (int i = 0; i < lamportMessages.length; ++i) {
          lamportMessages[i] = new LamportMessage(
                  LamportMessage.Type.RELEASE, 
@@ -58,21 +74,19 @@ public class LamportImpl implements Lamport {
    }
 
    @Override
-   public LamportMessage receive(LamportMessage message) throws RemoteException {
-      System.out.println("Start send");
+   public synchronized LamportMessage receive(LamportMessage message) throws RemoteException {
       // Update our clock
       clock.update(message.getTimeStamp());
       
       // Store the message (Which is either a RELEASE or a REQUEST)
-      synchronized(this) {
-         lamportMessages[message.getSender()] = message;
-      }
+      lamportMessages[message.getSender()] = message;
       
+      // The response we will return
       LamportMessage response = null;
 
       // Answer according to the type of message
       if (message.getType() == LamportMessage.Type.REQUEST) {
-         // Give a RECEIPT
+         // Create a RECEIPT
          response = new LamportMessage(
                  LamportMessage.Type.RECEIPT,
                  clock.getTime(),
@@ -85,22 +99,19 @@ public class LamportImpl implements Lamport {
       }
 
       // If we are waiting for a critical section and have permission
-      LamportMessage myLastMessage;
-      synchronized(this) {
-         myLastMessage = lamportMessages[this.id];
-      //}
-         if (myLastMessage.getType() == LamportMessage.Type.REQUEST
-                 && criticalSectionPermission()) {
-            this.notify();
-         }
+      LamportMessage myLastMessage = lamportMessages[this.id];
+      
+      // Notify the application if it is waiting for critical section
+      if (myLastMessage.getType() == LamportMessage.Type.REQUEST
+              && criticalSectionPermission()) {
+         this.notify();
       }
-      System.out.println("End send");
+      
       return response;
    }
    
    @Override
    public void lock() throws RemoteException{
-      System.out.println("Start lock");
       // Request the critical section
       requestCriticalSection();
 
@@ -108,21 +119,18 @@ public class LamportImpl implements Lamport {
       synchronized(this) {
          if (!criticalSectionPermission()) {
             try {
-                  this.wait();
+               this.wait();
             } catch (InterruptedException ex) {
                Logger.getLogger(LamportImpl.class.getName()).log(Level.SEVERE, null, ex);
             }
          }
       }
-      System.out.println("End lock");
    }
 
    @Override
    public void unlock() throws RemoteException {
-      System.out.println("Start unlock");
       // Release the critical section and notify the other applications of the change
       releaseCriticalSection();  
-      System.out.println("End unlock");
    }
 
    @Override
@@ -145,11 +153,10 @@ public class LamportImpl implements Lamport {
     * @throws RemoteException
     */
    private void requestCriticalSection() throws RemoteException {
-      System.out.println("Start request");
       // Tick the clock
       clock.tick();
 
-      // Send a message of type request
+      // Create a message of type request
       LamportMessage request = new LamportMessage(
               LamportMessage.Type.REQUEST,
               clock.getTime(),
@@ -190,7 +197,6 @@ public class LamportImpl implements Lamport {
 
          }
       }
-      System.out.println("End request");
    }
 
    /**
@@ -200,8 +206,7 @@ public class LamportImpl implements Lamport {
     * @throws RemoteException
     */
    public void releaseCriticalSection() throws RemoteException {
-      System.out.println("Start release");
-      // Create the message to send
+      // Create the RELEASE message to send
       LamportMessage release = new LamportMessage(
               LamportMessage.Type.RELEASE,
               clock.getTime(),
@@ -219,7 +224,6 @@ public class LamportImpl implements Lamport {
             lamportApplications[i].receive(release);
          }
       }
-      System.out.println("End release");
    }
 
    /**
@@ -231,7 +235,6 @@ public class LamportImpl implements Lamport {
     * than all the other time stamps.
     */
    private boolean criticalSectionPermission() {
-      System.out.println("Start permission");
       boolean permission = true;
       long myLastTimeStamp = lamportMessages[this.id].getTimeStamp();
 
@@ -249,7 +252,6 @@ public class LamportImpl implements Lamport {
          }
       }
       
-      System.out.println("End permission");
       // Return the resulting permission
       return permission;
    }
@@ -266,13 +268,4 @@ public class LamportImpl implements Lamport {
       return (Lamport) LocateRegistry.getRegistry(rmiAddress)
               .lookup("lamport-" + id);
    }
-   
-   /**
-    * Get the Logical clock the Lamport algorithm is using
-    * @return the logical clock in use
-    */
-   public LogicalClock getClock() {
-      return clock;
-   }
-   
 }

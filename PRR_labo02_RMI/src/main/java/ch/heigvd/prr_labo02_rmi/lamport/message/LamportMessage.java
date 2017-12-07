@@ -1,9 +1,28 @@
+/**
+ * File: LamportMessage.java
+ * Authors: Sathiya Kirushnapillai & Mathieu Monteverde
+ * Date: 07.12.2017
+ */
+
 package ch.heigvd.prr_labo02_rmi.lamport.message;
 
 import java.io.Serializable;
 
 /**
- *
+ * The LamportMessage class represents Lamport messages exchanged by the 
+ * Lamport applications to manage the Lamport algorithm. 
+ * 
+ * There is three types of messages :
+ *    REQUEST (REQUETE dans le cours)
+ *    RECEIPT (QUITTANCE dans le cours)
+ *    RELEASE (LIBERE dans le cours)
+ * 
+ * The LamportMessage class stores the type of message, the time stamp of the 
+ * message, the sender application id, and the shared value. 
+ * 
+ * The shared value should only be significant when the message is of type
+ * RELEASE (we have modified the value in critical section).
+ *    
  */
 public class LamportMessage implements Serializable {
    
